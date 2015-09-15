@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jardesc>
+    <jar path="/Users/Yazan/Desktop/recordIndexer.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/recordIndexer/description.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="true" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
+        <folder path="/recordIndexer/doc"/>
+        <javaElement handleIdentifier="=recordIndexer/src"/>
+        <folder path="/recordIndexer/Records"/>
+        <folder path="/recordIndexer/build"/>
+        <folder path="/recordIndexer/database"/>
+        <javaElement handleIdentifier="=recordIndexer/test"/>
+        <file path="/recordIndexer/build.xml"/>
+        <folder path="/recordIndexer/passoff"/>
+        <file path="/recordIndexer/.DS_Store"/>
+        <file path="/recordIndexer/checkstyle.xml"/>
+        <file path="/recordIndexer/.project"/>
+        <file path="/recordIndexer/recordIndexer.sql"/>
+        <file path="/recordIndexer/.classpath"/>
+        <folder path="/recordIndexer/demo"/>
+        <folder path="/recordIndexer/lib"/>
+        <folder path="/recordIndexer/backup"/>
+    </selectedElements>
+</jardesc>
