@@ -22,10 +22,12 @@ public class Main {
 		/**
 		 * Create an instance of your corrector here
 		 */
-		SpellCorrector corrector = new SpellCorrector();
-		
-		corrector.useDictionary(dictionaryFileName);
-		String suggestion = corrector.suggestSimilarWord(inputWord);
+		SpellCorrector myCorrector = new SpellCorrector();
+		SpellCorrector mytempCorrector = new SpellCorrector();
+		mytempCorrector.useDictionary(dictionaryFileName);
+		myCorrector.useDictionary(dictionaryFileName);
+		System.out.println(mytempCorrector.myTrie.equals(myCorrector.myTrie));
+		String suggestion = myCorrector.suggestSimilarWord(inputWord);
 		
 		System.out.println("Suggestion is: " + suggestion);
 	}

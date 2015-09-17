@@ -1,5 +1,9 @@
+/**
+ * 
+ */
 package spell;
 
+import java.awt.List;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -8,8 +12,33 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Scanner;
 
+/**
+ * @author Yazan Halawa
+ *
+ */
 public class SpellCorrector implements ISpellCorrector {
-	private Trie myTrie;
+	Trie myTrie;
+	/**
+	 * 
+	 */
+	public SpellCorrector() {
+		myTrie = new Trie();
+	}
+
+	/* (non-Javadoc)
+	 * @see spell.ISpellCorrector#useDictionary(java.lang.String)
+	 */
+	@Override
+	public void useDictionary(String dictionaryFileName) throws IOException {
+		Scanner myScanner = new Scanner (new 
+				BufferedInputStream(new FileInputStream(dictionaryFileName)));
+		while(myScanner.hasNext()){
+			String newWord = myScanner.next();
+			myTrie.add(newWord);
+		}
+		myScanner.close();
+	}
+
 	/**
 	 * @return the myTrie
 	 */
@@ -24,168 +53,207 @@ public class SpellCorrector implements ISpellCorrector {
 		this.myTrie = myTrie;
 	}
 
-	public SpellCorrector() {
-		myTrie = new Trie();
-	}
-
-	@Override
-	public void useDictionary(String dictionaryFileName) throws IOException {
-		Scanner myScanner = new Scanner(new BufferedInputStream(new FileInputStream(dictionaryFileName)));
-		while (myScanner.hasNext()){
-			myTrie.add(myScanner.next());
-		}
-		myScanner.close();
-	}
-
+	/* (non-Javadoc)
+	 * @see spell.ISpellCorrector#suggestSimilarWord(java.lang.String)
+	 */
 	@Override
 	public String suggestSimilarWord(String inputWord)
 			throws NoSimilarWordFoundException {
-		String inputWordLower = inputWord.toLowerCase();
-		if (myTrie.find(inputWordLower) != null)
-			return inputWord;
 		ArrayList<String> correctWords = new ArrayList<String>();
-		ArrayList<String> editedWords = new ArrayList<String>();
+		ArrayList<String> EditedWords = new ArrayList<String>();
+		String inputWordLower = inputWord.toLowerCase();
+		if (myTrie.find(inputWord)!=null){//if the word exists in the Trie
+			return inputWordLower;
+		}
+		//Distance 1
 		boolean isFirstTimeThrough = true;
-		deletionDistance(correctWords, editedWords, inputWordLower, isFirstTimeThrough);
-		transpositionDistance(correctWords, editedWords, inputWordLower, isFirstTimeThrough);
-		alterationDistance(correctWords, editedWords, inputWordLower, isFirstTimeThrough);
-		insertionDistance(correctWords, editedWords, inputWordLower, isFirstTimeThrough);
-		if (correctWords.size() == 0){
-			for (String word: editedWords){
-				deletionDistance(correctWords, editedWords, word, isFirstTimeThrough);
-				transpositionDistance(correctWords, editedWords, word, isFirstTimeThrough);
-				alterationDistance(correctWords, editedWords, word, isFirstTimeThrough);
-				insertionDistance(correctWords, editedWords, word, isFirstTimeThrough);
+		//Deletion Distance
+		deletionDistance(correctWords, EditedWords, inputWordLower, isFirstTimeThrough);
+		//Transposition Distance
+		transpositionDistance(correctWords, EditedWords, inputWordLower, isFirstTimeThrough);
+		//Alteration Distance
+		alterationDistance(correctWords, EditedWords, inputWordLower, isFirstTimeThrough);
+		//Insertion Distance
+		insertionDistance(correctWords, EditedWords, inputWordLower, isFirstTimeThrough);
+
+		if (correctWords.isEmpty()){
+			//Distance 2
+			isFirstTimeThrough = false;
+			for (int i = 0; i < EditedWords.size(); i++){
+				//Deletion Distance
+				deletionDistance(correctWords, EditedWords, EditedWords.get(i), isFirstTimeThrough);
+				//Transposition Distance
+				transpositionDistance(correctWords, EditedWords, EditedWords.get(i), isFirstTimeThrough);
+				//Alteration Distance
+				alterationDistance(correctWords, EditedWords, EditedWords.get(i), isFirstTimeThrough);
+				//Insertion Distance
+				insertionDistance(correctWords, EditedWords, EditedWords.get(i), isFirstTimeThrough);
 			}
-			if (correctWords.size() == 0)
+			if (correctWords.isEmpty())
 				throw new NoSimilarWordFoundException();
 		}
-		Collections.sort(correctWords, new myComp());
-		ArrayList <String> alphaWords = new ArrayList<String>();
+		//Sort CorrectWords by count
+		Collections.sort(correctWords, new MyCountComp());
+		ArrayList<String> correctAlphabitizedWords = new ArrayList<String>();
+		//Add words equal in count to a new array
 		for (int i = 0; i < correctWords.size(); i++){
-			Node first = (Node) myTrie.find(correctWords.get(0));
-			Node second = (Node) myTrie.find(correctWords.get(i));
-			if (first.getValue() == second.getValue())
-				alphaWords.add(correctWords.get(i));
+			Node tempFirst = (Node)myTrie.find(correctWords.get(0));
+			Node tempSecond = (Node)myTrie.find(correctWords.get(i));
+			if (tempFirst.count == tempSecond.count){
+				correctAlphabitizedWords.add(correctWords.get(i));
+			}
 		}
-		Collections.sort(alphaWords);
-		return alphaWords.get(0);
+		//Sort CorrectWords alphabetically
+		Collections.sort(correctAlphabitizedWords);
+		return correctAlphabitizedWords.get(0);
 	}
 
-	class myComp implements Comparator<String>{
+	class MyCountComp implements Comparator<String>{
 
 		@Override
 		public int compare(String o1, String o2) {
-			Node first = (Node) myTrie.find(o1);
-			Node second = (Node) myTrie.find(o2);
-			if (first.getValue() < second.getValue())
+			Node firstNode = (Node)myTrie.find(o1);
+			Node secondNode = (Node)myTrie.find(o2);
+			if (firstNode.count < secondNode.count){
 				return 1;
-			else
+			} else{
 				return -1;
+			}
 		}
-		
+
 	}
+	/**
+	 * @param correctWords
+	 * @param EditedWords
+	 * @param inputWordLower
+	 */
 	private void insertionDistance(ArrayList<String> correctWords,
-			ArrayList<String> editedWords, String inputWordLower,
-			boolean isFirstTimeThrough) {
+			ArrayList<String> EditedWords, String inputWordLower, boolean isFirstTime) {
 		for (int i = 0; i < inputWordLower.length(); i++){
 			char myChar = 'a';
 			for (int j = 0; j < 26; j++){
 				StringBuilder myBuilder = new StringBuilder();
-				if (i==0){
-					myBuilder.append(myChar + inputWordLower);
+				String word;
+				if (i == 0){
+					myBuilder.append(myChar);
+					myBuilder.append(inputWordLower);
 				}
 				else {
-					myBuilder.append(inputWordLower.substring(0, i) + myChar + 
-							inputWordLower.substring(i, inputWordLower.length()));
+					myBuilder.append(inputWordLower.substring(0, i));
+					myBuilder.append(myChar);
+					myBuilder.append(inputWordLower.substring(i, inputWordLower.length()));
 				}
-				String word = myBuilder.toString();
-				if (myTrie.find(word)!=null)
+				word = myBuilder.toString();
+				if (myTrie.find(word)!=null){
 					correctWords.add(word);
+				}
 				else{
-					if (isFirstTimeThrough)
-						editedWords.add(word);
+					if (isFirstTime)
+						EditedWords.add(word);
 				}
 				myChar++;
 			}
 		}
-		char myChar = 'a';
-		for (int i = 0; i < 26; i++){
-			StringBuilder myBuilder = new StringBuilder();
-			myBuilder.append(inputWordLower + myChar);
-			String word = myBuilder.toString();
-			if (myTrie.find(word)!=null)
-				correctWords.add(word);
-			else{
-				if (isFirstTimeThrough)
-					editedWords.add(word);
-			}
+		StringBuilder mySecondBuilder = new StringBuilder();
+		for (int j = 0; j < 26; j++){
+			char myChar = 'a';
+			mySecondBuilder.append(inputWordLower);
+			mySecondBuilder.append(myChar);
+			String word = mySecondBuilder.toString();
 			myChar++;
+			if (myTrie.find(word)!=null){
+				correctWords.add(word);
+			}
+			else{
+				if (isFirstTime)
+					EditedWords.add(word);
+			}
 		}
-		
 	}
 
+	/**
+	 * @param correctWords
+	 * @param EditedWords
+	 * @param inputWordLower
+	 */
 	private void alterationDistance(ArrayList<String> correctWords,
-			ArrayList<String> editedWords, String inputWordLower,
-			boolean isFirstTimeThrough) {
+			ArrayList<String> EditedWords, String inputWordLower, boolean isFirstTime) {
 		for (int i = 0; i < inputWordLower.length(); i++){
 			char myChar = 'a';
 			for (int j = 0; j < 26; j++){
-				char [] myChars = inputWordLower.toCharArray();
-				myChars[i] = myChar;
-				String word = new String(myChars);
-				if (myTrie.find(word)!=null)
-					correctWords.add(word);
-				else{
-					if (isFirstTimeThrough)
-						editedWords.add(word);
-				}
+				char [] tempArray = inputWordLower.toCharArray();
+				tempArray[i] = myChar;
+				String word = new String(tempArray);
 				myChar++;
+				if (myTrie.find(word)!=null){
+					correctWords.add(word);
+				}
+				else{
+					if (isFirstTime)
+						EditedWords.add(word);
+				}
 			}
 		}
-		
 	}
 
+	/**
+	 * @param correctWords
+	 * @param EditedWords
+	 * @param inputWordLower
+	 */
 	private void transpositionDistance(ArrayList<String> correctWords,
-			ArrayList<String> editedWords, String inputWordLower,
-			boolean isFirstTimeThrough) {
+			ArrayList<String> EditedWords, String inputWordLower, boolean isFirstTime) {
 		for (int i = 0; i < inputWordLower.length()-1; i++){
-			char [] myChars = inputWordLower.toCharArray();
-			char tmp = myChars[i];
-			myChars[i] = myChars[i+1];
-			myChars[i+1] = tmp;
-			String word = new String(myChars);
-			if (myTrie.find(word)!=null)
+			char [] tempArray = inputWordLower.toCharArray();
+			char temp = tempArray[i];
+			tempArray[i] = tempArray[i+1];
+			tempArray[i+1] = temp;
+			String word = new String(tempArray);
+			if (myTrie.find(word)!=null){
 				correctWords.add(word);
+			}
 			else{
-				if (isFirstTimeThrough)
-					editedWords.add(word);
+				if (isFirstTime)
+					EditedWords.add(word);
 			}
 		}
-		
 	}
 
+	/**
+	 * @param correctWords
+	 * @param EditedWords
+	 * @param inputWordLower
+	 */
 	private void deletionDistance(ArrayList<String> correctWords,
-			ArrayList<String> editedWords, String inputWordLower,
-			boolean isFirstTimeThrough) {
-		for (int i = 0; i < inputWordLower.length(); i++){
-			StringBuilder myBuilder = new StringBuilder();
-			if (i == 0)
-				myBuilder.append(inputWordLower.substring(1, inputWordLower.length()));
-			else if ( i == inputWordLower.length()-1)
-				myBuilder.append(inputWordLower.substring(0, i));
-			else{
-				myBuilder.append(inputWordLower.substring(0, i) + inputWordLower.substring(i+1, inputWordLower.length()));
+			ArrayList<String> EditedWords, String inputWordLower, boolean isFirstTime) {
+		for (int i = 0; i <= inputWordLower.length(); i++){
+			String firstPart;
+			String secondPart;
+			String word;
+			if (i == 0){
+				if (inputWordLower.length() <= 1 )
+					word = "";
+				else
+					word = inputWordLower.substring(1, inputWordLower.length());
 			}
-			String word = myBuilder.toString();
-			if (myTrie.find(word)!=null)
-				correctWords.add(word);
+			else if (i == inputWordLower.length())
+				word = inputWordLower.substring(0, i);
 			else{
-				if (isFirstTimeThrough)
-					editedWords.add(word);
+				firstPart = inputWordLower.substring(0, i);
+				secondPart = inputWordLower.substring(i+1, inputWordLower.length());
+				StringBuilder myBuilder = new StringBuilder();
+				myBuilder.append(firstPart);
+				myBuilder.append(secondPart);
+				word = myBuilder.toString();
+			}
+			if (myTrie.find(word)!=null){
+				correctWords.add(word);
+				}
+			else{
+				if (isFirstTime)
+					EditedWords.add(word);
 			}
 		}
-		
 	}
 
 }

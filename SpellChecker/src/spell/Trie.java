@@ -1,9 +1,22 @@
 package spell;
 
 public class Trie implements ITrie {
-	private Node root;
-	private int wordCount;
-	private int nodeCount;
+	Node root;
+	int wordCount;
+	int nodeCount;
+
+	public Trie() {
+		root = new Node();
+		wordCount = 0;
+		nodeCount = 1;
+	}
+
+	@Override
+	public void add(String word) {
+		nodeCount += root.add(word);
+		wordCount++;
+	}
+
 	/**
 	 * @return the root
 	 */
@@ -17,6 +30,7 @@ public class Trie implements ITrie {
 	public void setRoot(Node root) {
 		this.root = root;
 	}
+
 
 	/**
 	 * @param wordCount the wordCount to set
@@ -32,22 +46,9 @@ public class Trie implements ITrie {
 		this.nodeCount = nodeCount;
 	}
 
-	public Trie() {
-		root = new Node();
-		wordCount = 0;
-		nodeCount = 1;
-	}
-
-	@Override
-	public void add(String word) {
-		nodeCount += root.add(word.toLowerCase());
-		wordCount++;
-
-	}
-
 	@Override
 	public INode find(String word) {
-		return root.find(word.toLowerCase());
+		return root.find(word);
 	}
 
 	@Override
@@ -59,50 +60,50 @@ public class Trie implements ITrie {
 	public int getNodeCount() {
 		return nodeCount;
 	}
-	
+
 	@Override
-	public String toString(){
+	public String toString() {
 		StringBuilder myBuilder = new StringBuilder();
 		StringBuilder tempBuilder = new StringBuilder();
-		traverse(root, myBuilder, tempBuilder);
+		traverse(root, tempBuilder, myBuilder);
 		return myBuilder.toString();
-	}
-	
-	private void traverse(Node root2, StringBuilder myBuilder,
-			StringBuilder tempBuilder) {
-		if (root2.getValue() != 0)
-			myBuilder.append(tempBuilder.toString() + "\n");
-		char myChar = 'a';
-		for (Node myNode: root2.getNodes()){
-			if (myNode != null){
-				tempBuilder.append(myChar);
-				traverse(myNode, myBuilder, tempBuilder);
-			}
-			myChar++;
-		}
-		if (tempBuilder.length() != 0){
-			tempBuilder.delete(tempBuilder.length()-1, tempBuilder.length());
-		}
-		
 	}
 
 	@Override
 	public int hashCode(){
-		return wordCount * nodeCount * 17;
+		final int RANDOM_MULTIPLIER = 17;
+		return wordCount * nodeCount * RANDOM_MULTIPLIER;
 	}
-	
+
 	@Override
 	public boolean equals(Object o){
-		if (o == null)
+		if (o==null)
 			return false;
 		if (this == o)
 			return true;
 		if (this.getClass() != o.getClass())
 			return false;
-		Trie tmp = (Trie)o;
-		if (!this.root.equals(tmp.root) || this.nodeCount != tmp.nodeCount || this.wordCount != tmp.wordCount)
+		Trie temp = (Trie) o;
+		if (!this.root.equals(temp.root) || this.wordCount != temp.wordCount ||
+				this.nodeCount != temp.nodeCount)
 			return false;
 		return true;
 	}
-
+	
+	private void traverse(Node myNode, StringBuilder tempBuilder, StringBuilder myBuilder){
+		if (myNode.count != 0){
+			myBuilder.append(tempBuilder.toString());
+			myBuilder.append("\n");
+		}
+		char myChar = 'a';
+		for (Node temp: myNode.getNodes()){
+			if (temp!=null){
+				tempBuilder.append(myChar);
+				traverse(temp, tempBuilder, myBuilder);
+				myChar++;
+			}
+		}
+		if (tempBuilder.length() != 0)
+			tempBuilder.delete(tempBuilder.length()-1, tempBuilder.length());
+	}
 }
